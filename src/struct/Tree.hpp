@@ -1,26 +1,30 @@
 #pragma once
-#include <cstdio>
-#include <memory>
+#include <boost/function.hpp>
+#include <boost/function/function_fwd.hpp>
+#include <ostream>
 #include <vector>
-namespace NAS {
 namespace Struct {
-template <typename T, typename Data>
+template <typename Data>
 class _Node_ {
  public:
-  std::unique_ptr<Data> data;
-  T father;
-  std::vector<T> children;
-  _Node_(std::unique_ptr<Data> data, T father);
-  _Node_(Data data, T father);
-  _Node_(T father);
+  Data data;
+  std::vector<_Node_<Data>*> children;
+  _Node_(Data data);
+  _Node_();
+  void add(_Node_<Data>* node);
+  ~_Node_();
 };
-template <typename T, typename Data>
+template <typename Data>
 class _Tree_ {
- protected:
-  std::vector<_Node_<T, Data>> nodes;
-  _Node_<T, Data> *root;
-
  public:
+  std::vector<_Node_<Data>> nodes;
+  _Node_<Data>* root;
+  _Tree_();
+  ~_Tree_();
+  void print(std::ostream& stream);
+  void print(std::ostream& stream, _Node_<Data>* node);
+  void forEach(boost::function<void(_Node_<Data>*)> func);
+  void forEach(boost::function<void(_Node_<Data>*)> func, _Node_<Data>* node);
 };
+
 }  // namespace Struct
-}  // namespace NAS

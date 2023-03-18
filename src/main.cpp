@@ -1,5 +1,13 @@
+
 #include <iostream>
-int main(){
-    std::cout<<"Hello";
-    return 0;
+#include <string>
+
+#include "core/Lexer.cpp"
+int main(int argc, char** args) {
+  if (argc < 2) {
+    std::cout << "No File";
+  } else {
+    auto str = args[1];
+  }
+  return 0;
 }
