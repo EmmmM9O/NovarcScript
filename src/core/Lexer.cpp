@@ -4,6 +4,14 @@
 #include <string>
 #include <utility>
 #include <vector>
+std::string core::Lexer::errors::StringErr::what() {
+  return "String end without \"";
+}
+core::Lexer::errors::StringErr::StringErr() { code = 11; }
+std::string core::Lexer::errors::NoteErr::what() {
+  return "Note Don't end in the end";
+}
+core::Lexer::errors::NoteErr::NoteErr() { code = 10; }
 void core::Lexer::_Lexer_::intiKeyWord() {
   KeyWordList = {{"var", 1}, {"let", 2},  {"def", 3},
                  {"if", 4},  {"else", 5}, {"for", 6}};
@@ -60,6 +68,7 @@ bool core::Lexer::_Lexer_::isOperator(char Char) {
  */
 void core::Lexer::_Lexer_::run() {
   std::vector<std::pair<int, std::string>> list;
+  std::vector<LexerError*> errorList;
   std::string token;
   char Char;
   State state = State::Start;
@@ -145,6 +154,7 @@ void core::Lexer::_Lexer_::run() {
         token.push_back(Char);
       }
       if (!isOperator(Char) || Iter == str.size() - 1) {
+        Iter--;
         auto it = OperatorList.find(token);
         if (it != OperatorList.end()) {
           list.push_back(std::make_pair(it->second, token));
@@ -159,10 +169,12 @@ void core::Lexer::_Lexer_::run() {
 
     if (state == State::LongNote) {
       token.push_back(Char);
-      if (token.ends_with("*/") || Iter == str.size() - 1) {
+      if (token.ends_with("*/")) {
         list.push_back(std::make_pair((int)Type::note, token));
         token = "";
         state = State::Start;
+      } else if (Iter == str.size() - 1) {
+        errorList.push_back(new errors::NoteErr{});
       }
       continue;
     }
@@ -178,14 +190,21 @@ void core::Lexer::_Lexer_::run() {
     }
     if (state == State::String) {
       token.push_back(Char);
-      if (Char == '\"' || Iter == str.size() - 1) {
+      if (Char == '\"') {
         list.push_back(std::make_pair((int)Type::String, token));
         token = "";
         state = State::Start;
+      } else if (Iter == str.size() - 1) {
+        errorList.push_back(new errors::StringErr{});
       }
     }
   }
   for (auto i : list) {
     std::cout << "{" << i.first << "," << i.second << "}" << std::endl;
+  }
+  std::cout << "Error:" << std::endl;
+  for (auto i : errorList) {
+    std::cout << "|code:" << i->code << "|" << i->what() << std::endl;
+    delete i;
   }
 }
