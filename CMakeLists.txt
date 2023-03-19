@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.0)
 project(NovarcScript VERSION 0.1.0)
 add_compile_options(-std=c++2a)
 set(CMAKE_CXX_STANDARD 20)
-set(BUILD_DIR "${PROJECT_SOURCE_DIR}/bin")
+set(BUILD_DIR "${PROJECT_SOURCE_DIR}/build")
 
 set(EXECUTABLE_OUTPUT_PATH ${BUILD_DIR})
 include_directories(${PROJECT_SOURCE_DIR})

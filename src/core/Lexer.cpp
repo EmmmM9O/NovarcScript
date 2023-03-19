@@ -1,15 +1,26 @@
+#pragma once
 #include "./Lexer.hpp"
 
 #include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
+core::Lexer::Token::Token(core::Lexer::Type t, int i, std::string d) {
+  type = t;
+  code = i;
+  data = d;
+}
+core::Lexer::Token::Token(core::Lexer::Type t, std::string d)
+    : Token(t, (int)t, d) {}
 std::string core::Lexer::errors::StringErr::what() {
   return "String end without \"";
 }
 core::Lexer::errors::StringErr::StringErr() { code = 11; }
 std::string core::Lexer::errors::NoteErr::what() {
   return "Note Don't end in the end";
+}
+void core::Lexer::_Lexer_::initDelimiter() {
+  DelimiterList = {{'{', 201}, {'}', 202}, {';', 203}, {',', 204}};
 }
 core::Lexer::errors::NoteErr::NoteErr() { code = 10; }
 void core::Lexer::_Lexer_::intiKeyWord() {
@@ -26,6 +37,7 @@ void core::Lexer::_Lexer_::initOperator() {
 core::Lexer::_Lexer_::_Lexer_() {
   intiKeyWord();
   initOperator();
+  initDelimiter();
   Iter = 0;
 }
 char core::Lexer::_Lexer_::getChar() {
@@ -66,8 +78,10 @@ bool core::Lexer::_Lexer_::isOperator(char Char) {
  *0:Start 1:read a Letter;
  *2:operator
  */
-void core::Lexer::_Lexer_::run() {
-  std::vector<std::pair<int, std::string>> list;
+std::pair<std::vector<core::Lexer::Token>,
+          std::vector<core::Lexer::LexerError*>>
+core::Lexer::_Lexer_::run() {
+  std::vector<Token> list;
   std::vector<LexerError*> errorList;
   std::string token;
   char Char;
@@ -90,7 +104,7 @@ void core::Lexer::_Lexer_::run() {
       if (isNumber(Char)) {
         token.push_back(Char);
       } else {
-        list.push_back(std::make_pair((int)Type::number, token));
+        list.push_back(Token(Type::number, token));
         state = State::Start;
         token = "";
       }
@@ -117,6 +131,12 @@ void core::Lexer::_Lexer_::run() {
         state = State::String;
         continue;
       }
+      auto it = DelimiterList.find(Char);
+      if (it != DelimiterList.end()) {
+        std::string a;
+        a += it->first;
+        list.push_back(Token(Type::Delimiter, it->second, a));
+      }
     }
     if (state == State::Letter) {
       // read Letter
@@ -129,9 +149,9 @@ void core::Lexer::_Lexer_::run() {
         // search for KeyWord
         auto it = KeyWordList.find(token);
         if (it != KeyWordList.end()) {  // IsKey
-          list.push_back(std::make_pair(it->second, it->first));
+          list.push_back(Token(Type::KeyWord, it->second, it->first));
         } else {
-          list.push_back(std::make_pair((int)Type::identifier, token));
+          list.push_back(Token(Type::identifier, token));
         }
         state = State::Start;
         Iter--;
@@ -157,9 +177,9 @@ void core::Lexer::_Lexer_::run() {
         Iter--;
         auto it = OperatorList.find(token);
         if (it != OperatorList.end()) {
-          list.push_back(std::make_pair(it->second, token));
+          list.push_back(Token(Type::Operator, it->second, token));
         } else {
-          list.push_back(std::make_pair((int)Type::Error, token));
+          list.push_back(Token(Type::Error, token));
         }
         token = "";
         state = State::Start;
@@ -170,7 +190,7 @@ void core::Lexer::_Lexer_::run() {
     if (state == State::LongNote) {
       token.push_back(Char);
       if (token.ends_with("*/")) {
-        list.push_back(std::make_pair((int)Type::note, token));
+        list.push_back(Token(Type::note, token));
         token = "";
         state = State::Start;
       } else if (Iter == str.size() - 1) {
@@ -180,7 +200,7 @@ void core::Lexer::_Lexer_::run() {
     }
     if (state == State::Note) {
       if (Char == '\n' || Iter == str.size() - 1) {
-        list.push_back(std::make_pair((int)Type::note, token));
+        list.push_back(Token(Type::note, token));
         token = "";
         state = State::Start;
       } else {
@@ -191,7 +211,7 @@ void core::Lexer::_Lexer_::run() {
     if (state == State::String) {
       token.push_back(Char);
       if (Char == '\"') {
-        list.push_back(std::make_pair((int)Type::String, token));
+        list.push_back(Token(Type::String, token));
         token = "";
         state = State::Start;
       } else if (Iter == str.size() - 1) {
@@ -200,9 +220,8 @@ void core::Lexer::_Lexer_::run() {
     }
   }
   for (auto i : list) {
-    std::cout << "{" << i.first << "," << i.second << "}" << std::endl;
+    std::cout << "{" << i.code << "," << i.data << "}" << std::endl;
   }
-  std::cout << "Error:" << std::endl;
   for (auto i : errorList) {
     std::cout << "|code:" << i->code << "|" << i->what() << std::endl;
     delete i;
