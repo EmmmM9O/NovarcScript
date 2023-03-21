@@ -1,2 +1,1 @@
-def main
-//test
+var test=114514
