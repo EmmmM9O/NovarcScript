@@ -55,8 +55,8 @@ class Letter : public BasicsWord {
   }
   bool checkLexer(char Char, std::string &str, State &state,
                   BasicC &controller) override final {
-    if (isLetter(Char) && ((isNumber(Char) && state == State::Letter)) ||
-        state == State::Start) {
+    if ((isLetter(Char) || (isNumber(Char) && state == State::Letter)) &&
+        (state == State::Letter || state == State::Start)) {
       state = State::Letter;
       str.push_back(Char);
       return true;
@@ -110,7 +110,25 @@ class BasicsKeyWord : public BasicsLetter {
 /*
  *Number,String are all types
  */
-class Number : public BasicsWord {};
+class Number : public BasicsWord {
+  Number() {
+    type = "Number";
+    id = 101;
+  }
+  bool checkLexer(char Char, std::string &str, State &state,
+                  BasicC &controller) override final {
+    if ((isNumber(Char) || (Char == '.' && state == State::Number)) &&
+        (state == State::Start || state == State::Number)) {
+      str.push_back(Char);
+      return true;
+    } else if (state == State::Number) {
+      controller.addList(str);
+      state = State::Start;
+      str = "";
+      return false;
+    }
+  }
+};
 /*
  *for Compiler to config
  */
