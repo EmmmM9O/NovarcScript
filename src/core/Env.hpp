@@ -9,6 +9,9 @@
 #include "src/struct/BasicType.hpp"
 namespace NAS {
 namespace core {
+namespace Lexer {
+class LexerError :public Struct::BasicType {};
+}  // namespace Lexer
 namespace Env {
 enum class State { Start, Letter, Number, Word, String };
 /*
@@ -40,6 +43,9 @@ class BasicsWord : public Struct::BasicType {
                           BasicC &controller) {
     return false;
   }
+  virtual bool endLexer(std::string &str, State &state, BasicC &controller) {
+    return false;
+  }
 };
 /*
  *Check whether it is a letter ,if true change
@@ -65,6 +71,10 @@ class Letter : public BasicsWord {
       controller.back();
       return false;
     }
+    return false;
+  }
+  bool endLexer(std::string &str, State &state, BasicC &controller) override {
+    if (state == State::Letter) state = State::Word;
     return false;
   }
 };
@@ -127,6 +137,7 @@ class Number : public BasicsWord {
       str = "";
       return false;
     }
+    return false;
   }
 };
 /*
@@ -143,6 +154,11 @@ class environment : public Struct::BasicType {
     return a;
   }
   std::vector<BasicsWord *> wordList;
+  ~environment() {
+    for (auto i : wordList) {
+      delete i;
+    }
+  }
 };
 }  // namespace Env
 

@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "xaver.clang-format",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "twxs.cmake",
+        "ms-vscode.cmake-tools"
+    ]
+}
