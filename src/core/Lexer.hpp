@@ -6,6 +6,7 @@
 
 #include "./Env.hpp"
 #include "src/struct/BasicType.hpp"
+#include "src/struct/Color.hpp"
 namespace NAS {
 namespace core {
 namespace Lexer {
@@ -31,10 +32,10 @@ class MorphemeStream
     for (auto i : first) {
       str += "[" + i.toString() + "]\n";
     }
-    str += "Error : " + std::to_string(second.size());
+    str += Text::red.text("Error : " + std::to_string(second.size()));
     if (second.size() > 0) {
       for (auto i : second) {
-        str += "\n[" + i.toString() + "]";
+        str += Text::red.text("\n[" + i.toString() + "]");
       }
     }
     return str;

@@ -2,6 +2,9 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+
+#include "src/core/Env.hpp"
+#include "src/core/Lexer.hpp"
 int main(int argc, char** args) {
   if (argc < 2) {
     std::cout << "No File";
@@ -14,13 +17,13 @@ int main(int argc, char** args) {
     }
     std::string str((std::istreambuf_iterator<char>(in)),
                     (std::istreambuf_iterator<char>()));
-    /*
-std::cout<<"read:\n"<<str<<std::endl;*/
-    in.close();
-    /*
-    core::Lexer::_Lexer_ Lexer;
-    Lexer.str = str+"\n ";
-    Lexer.run();*/
+
+    std::cout << "read:\n-------" << str << std::endl
+              << "---------" << std::endl;
+    NAS::core::Lexer::_Lexer_ lexer;
+    lexer.env = new NAS::core::StandardEnv;
+    auto s = lexer.run(str);
+    std::cout << s.toString();
   }
   return 0;
 }
