@@ -18,12 +18,12 @@ int main(int argc, char** args) {
     std::string str((std::istreambuf_iterator<char>(in)),
                     (std::istreambuf_iterator<char>()));
 
-    std::cout << "read:\n-------" << str << std::endl
+    std::cout << "read:\n-------\n" << str << std::endl
               << "---------" << std::endl;
     NAS::core::Lexer::_Lexer_ lexer;
     lexer.env = new NAS::core::StandardEnv;
     auto s = lexer.run(str);
-    std::cout << s.toString();
+    std::cout<<"Key Words:"<<lexer.env->toString()<<"---------\n" << s.toString()<<std::endl;
   }
   return 0;
 }

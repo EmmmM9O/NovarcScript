@@ -46,6 +46,11 @@ class BasicsWord : public Struct::BasicType {
       case '*':
       case '+':
       case '-':
+      case '=':
+      case '!':
+      case '|':
+      case '&':
+      case '^':
         return true;
       default:
         return false;
@@ -87,7 +92,7 @@ class Letter : public BasicsWord {
       return true;
     } else if (state == State::Letter) {
       state = State::Word;
-      controller.back();
+      // controller.back();
       return false;
     }
     return false;
@@ -149,6 +154,7 @@ class Number : public BasicsWord {
                   BasicC &controller) override final {
     if ((isNumber(Char) || (Char == '.' && state == State::Number)) &&
         (state == State::Start || state == State::Number)) {
+      state = State::Number;
       str.push_back(Char);
       return true;
     } else if (state == State::Number) {
@@ -208,10 +214,13 @@ class Operator : public BasicsWord {
         (state == State::Start || state == State::Operator)) {
       str.push_back(Char);
       state = State::Operator;
+      return true;
     } else if (state == State::Operator) {
       controller.addList(str);
       state = State::Start;
       str = "";
+      controller.back();
+      return false;
     }
     return false;
   }
@@ -275,6 +284,7 @@ class StandardEnv : public Env::environment {
                 new Env::BasicsKeyWord("else", 4),
                 new Env::BasicsKeyWord("do", 5),
                 new Env::BasicsKeyWord("while", 6),
+                new Env::BasicsLetter,
                 new Env::Number,
                 new Env::String,
                 new Env::Operator,

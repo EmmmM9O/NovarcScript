@@ -16,7 +16,7 @@ class Morpheme : public Struct::BasicType {
   Env::BasicsWord *type;
   std::string str;
   std::string toString() const override {
-    return "<" + type->toString() + ">" + str;
+    return "<" + type->toString() + ">:" + str;
   }
   Morpheme(std::string st, Env::BasicsWord *ty) {
     str = st;
@@ -51,13 +51,15 @@ class _Lexer_ {
     Env::BasicC controller;
     controller.back = [&Iter]() -> void { Iter--; };
     Env::State state = Env::State::Start;
+    std::string s;
     while (Iter < str.size()) {
       auto Char = str[Iter];
+      Iter++;
       for (auto i : env->wordList) {
         controller.addList = [&i, &stream](std::string str) -> void {
           stream.first.push_back(Morpheme(str, i));
         };
-        if (i->checkLexer(Char, str, state, controller)) {
+        if (i->checkLexer(Char, s, state, controller)) {
           continue;
         }
       }
@@ -66,7 +68,7 @@ class _Lexer_ {
       controller.addList = [&i, &stream](std::string str) -> void {
         stream.first.push_back(Morpheme(str, i));
       };
-      if (i->endLexer(str, state, controller)) {
+      if (i->endLexer(s, state, controller)) {
         continue;
       }
     }
