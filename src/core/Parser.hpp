@@ -22,8 +22,10 @@ class _parser_ : public Struct::BasicType {
    */
   AST run(Lexer::LexiconStream stream) {
     AST tree;
+    RunningState state = RunningState::Start;
     tree.root->data.type = Type::Start;
     tree.root->data.key = StandardKey::Start;
+    return tree;
   }
 };
 }  // namespace Parser

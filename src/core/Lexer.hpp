@@ -11,48 +11,6 @@ namespace NAS {
 namespace core {
 namespace Lexer {
 
-class Lexicon : public Struct::BasicType {
- public:
-  Env::BasicsWord *type;
-  std::string str;
-  std::string toString() const override {
-    return "<" + type->toString() + ">:" + str;
-  }
-  Lexicon(std::string st, Env::BasicsWord *ty) {
-    str = st;
-    type = ty;
-  }
-};
-class LexiconStream
-    : public std::pair<std::vector<Lexicon>, std::vector<LexerError *> >,
-      public Struct::BasicType {
- public:
-  void clear() {
-    first.clear();
-    std::vector<Lexicon> t;
-    first.swap(t);
-    for (auto i : second) {
-      delete i;
-    }
-    second.clear();
-    std::vector<LexerError *> t2;
-    second.swap(t2);
-  }
-  std::string toString() const override {
-    std::string str;
-    for (auto i : first) {
-      str += "[" + i.toString() + "]\n";
-    }
-    str += Text::red.text("Error : " + std::to_string(second.size()));
-    if (second.size() > 0) {
-      for (auto i : second) {
-        str += Text::red.text("\n[" + i->toString() + "]");
-      }
-    }
-    return str;
-  }
-};
-
 class _Lexer_ {
  public:
   Env::environment *env;

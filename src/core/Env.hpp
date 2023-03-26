@@ -40,6 +40,12 @@ class AST : public Struct::BasicTree<ASTNode> {
     return str;
   }
 };
+/**
+ * @brief BasicGrammar
+ * @note for Parser
+ *
+ */
+
 }  // namespace Parser
 namespace Lexer {
 /**
@@ -89,7 +95,7 @@ class BasicsWord : public Struct::BasicType {
   static bool isLetter(char Char) {
     return ('a' <= Char && Char <= 'z') || ('A' <= Char && Char <= 'Z');
   }
-  static bool isOpearter(char Char) {
+  static bool isOperator(char Char) {
     switch (Char) {
       case '/':
       case '*':
@@ -259,7 +265,7 @@ class Operator : public BasicsWord {
   }
   bool checkLexer(char Char, std::string &str, State &state,
                   BasicC &controller) override final {
-    if (isOpearter(Char) &&
+    if (isOperator(Char) &&
         (state == State::Start || state == State::Operator)) {
       str.push_back(Char);
       state = State::Operator;
@@ -395,5 +401,58 @@ class StandardEnv : public Env::environment {
                 new Env::LongNote};
   }
 };
+namespace Lexer {
+
+class Lexicon : public Struct::BasicType {
+ public:
+  Env::BasicsWord *type;
+  std::string str;
+  std::string toString() const override {
+    return "<" + type->toString() + ">:" + str;
+  }
+  Lexicon(std::string st, Env::BasicsWord *ty) {
+    str = st;
+    type = ty;
+  }
+};
+class LexiconStream
+    : public std::pair<std::vector<Lexicon>, std::vector<LexerError *> >,
+      public Struct::BasicType {
+ public:
+  void clear() {
+    first.clear();
+    std::vector<Lexicon> t;
+    first.swap(t);
+    for (auto i : second) {
+      delete i;
+    }
+    second.clear();
+    std::vector<LexerError *> t2;
+    second.swap(t2);
+  }
+  std::string toString() const override {
+    std::string str;
+    for (auto i : first) {
+      str += "[" + i.toString() + "]\n";
+    }
+    str += Text::red.text("Error : " + std::to_string(second.size()));
+    if (second.size() > 0) {
+      for (auto i : second) {
+        str += Text::red.text("\n[" + i->toString() + "]");
+      }
+    }
+    return str;
+  }
+};
+}  // namespace Lexer
+namespace Parser {
+enum class RunningState { Start };
+class BasicGrammar : public Struct::BasicType {
+ public:
+  virtual bool check(Lexer::Lexicon &lexicon, AST &tree, RunningState state) {
+    return false;
+  }
+};
+}  // namespace Parser
 }  // namespace core
 }  // namespace NAS
