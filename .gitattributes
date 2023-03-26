@@ -1,0 +1,5 @@
+*.c linguist-language=C++
+*.cpp linguist-language=C++
+*.hpp linguist-language=C++
+*.nas linguist-language=NovarcScript
+CMakeLists.txt linguist-language=Cmake
