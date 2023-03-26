@@ -24,9 +24,20 @@ class Morpheme : public Struct::BasicType {
   }
 };
 class MorphemeStream
-    : public std::pair<std::vector<Morpheme>, std::vector<LexerError> >,
+    : public std::pair<std::vector<Morpheme>, std::vector<LexerError *> >,
       public Struct::BasicType {
  public:
+  void clear() {
+    first.clear();
+    std::vector<Morpheme> t;
+    first.swap(t);
+    for (auto i : second) {
+      delete i;
+    }
+    second.clear();
+    std::vector<LexerError *> t2;
+    second.swap(t2);
+  }
   std::string toString() const override {
     std::string str;
     for (auto i : first) {
@@ -35,7 +46,7 @@ class MorphemeStream
     str += Text::red.text("Error : " + std::to_string(second.size()));
     if (second.size() > 0) {
       for (auto i : second) {
-        str += Text::red.text("\n[" + i.toString() + "]");
+        str += Text::red.text("\n[" + i->toString() + "]");
       }
     }
     return str;
@@ -50,6 +61,9 @@ class _Lexer_ {
     int Iter = 0;
     Env::BasicC controller;
     controller.back = [&Iter]() -> void { Iter--; };
+    controller.Throw = [&stream](LexerError *err) -> void {
+      stream.second.push_back(err);
+    };
     Env::State state = Env::State::Start;
     std::string s;
     while (Iter < str.size()) {

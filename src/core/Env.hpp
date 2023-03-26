@@ -20,7 +20,16 @@ class LexerError : public Struct::BasicType {
 };
 }  // namespace Lexer
 namespace Env {
-enum class State { Start, Letter, Number, Word, String, Operator, Note };
+enum class State {
+  Start,
+  Letter,
+  Number,
+  Word,
+  String,
+  Operator,
+  Note,
+  LongNote
+};
 /*
  *For Word to control the compiler
  *<AddList> Add to the character stream
@@ -28,7 +37,7 @@ enum class State { Start, Letter, Number, Word, String, Operator, Note };
  */
 class BasicC {
  public:
-  boost::function<void(Lexer::LexerError)> Throw;
+  boost::function<void(Lexer::LexerError *)> Throw;
   boost::function<void(std::string)> addList;
   boost::function<void()> back;
 };
@@ -196,7 +205,7 @@ class String : public BasicsWord {
   }
   bool endLexer(std::string &str, State &state, BasicC &controller) override {
     if (state == State::String && !str.ends_with("\"")) {
-      controller.Throw(StringEndErr());
+      controller.Throw(new StringEndErr);
       return true;
     }
     return false;
@@ -248,6 +257,50 @@ class Note : public BasicsWord {
     }
     return false;
   }
+  bool endLexer(std::string &str, State &state,
+                BasicC &controller) override final {
+    if (state == State::Note) {
+      controller.addList(str);
+      return true;
+    }
+    return false;
+  }
+};
+class NoteErr : public Lexer::LexerError {
+ public:
+  std::string what() const override final { return "Note without a */"; }
+};
+class LongNote : public BasicsWord {
+ public:
+  LongNote() {
+    type = "LongNote";
+    id = 104;
+  }
+  bool checkLexer(char Char, std::string &str, State &state,
+                  BasicC &controller) override final {
+    if (state == State::Operator && str.starts_with("/*")) {
+      state = State::LongNote;
+      return true;
+    }
+    if (state == State::LongNote) {
+      str.push_back(Char);
+      if (str.ends_with("*/")) {
+        controller.addList(str);
+        str = "";
+        state = State::Start;
+      }
+      return true;
+    }
+    return false;
+  }
+  bool endLexer(std::string &str, State &state,
+                BasicC &controller) override final {
+    if (state == State::LongNote && !str.ends_with("*/")) {
+      controller.Throw(new NoteErr);
+      return true;
+    }
+    return false;
+  }
 };
 /*
  *for Compiler to config
@@ -264,6 +317,11 @@ class environment : public Struct::BasicType {
   }
   std::vector<BasicsWord *> wordList;
   ~environment() {
+    for (auto i : wordList) {
+      delete i;
+    }
+  }
+  void clear() {
     for (auto i : wordList) {
       delete i;
     }
@@ -288,7 +346,8 @@ class StandardEnv : public Env::environment {
                 new Env::Number,
                 new Env::String,
                 new Env::Operator,
-                new Env::Note};
+                new Env::Note,
+                new Env::LongNote};
   }
 };
 }  // namespace core

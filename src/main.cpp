@@ -24,6 +24,7 @@ int main(int argc, char** args) {
     lexer.env = new NAS::core::StandardEnv;
     auto s = lexer.run(str);
     std::cout<<"Key Words:"<<lexer.env->toString()<<"---------\n" << s.toString()<<std::endl;
+    s.clear();
   }
   return 0;
 }
