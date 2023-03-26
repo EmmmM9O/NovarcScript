@@ -1,7 +1,6 @@
 
 #pragma once
-#include <boost/function/function_fwd.hpp>
-#include <cstddef>
+#include <boost/function.hpp>
 #include <vector>
 
 #include "src/struct/BasicType.hpp"
@@ -37,6 +36,7 @@ class BasicTreeNote : public BasicType {
 template <typename Data>
 class BasicTree : public BasicType {
  public:
+  virtual std::string toString() const override { return "[Tree][Object]"; }
   BasicTreeNote<Data> *root;
   BasicTree() {
     root = new BasicTreeNote<Data>;

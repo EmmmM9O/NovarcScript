@@ -13,16 +13,33 @@
 namespace NAS {
 namespace core {
 namespace Parser {
+enum class Type { Start, KeyWord };
 /**
  * @brief Node for abstract syntax tree
  *
  */
-class ASTNode : public Struct::BasicType {};
+class ASTNode : public Struct::BasicType {
+ public:
+  Type type;
+  std::string key;
+};
 /**
  * @brief abstract syntax tree
  * @note for Parser
  */
-typedef Struct::BasicTree<ASTNode> AST;
+namespace StandardKey {
+const static std::string Start = "Start";
+}
+class AST : public Struct::BasicTree<ASTNode> {
+ public:
+  std::string toString() const override final {
+    std::string str;
+    root->DeepForEach([&str](Struct::BasicTreeNote<ASTNode> node) -> void {
+      str += "[" + node.father->data.key + "]->[" + node.data.key + "]";
+    });
+    return str;
+  }
+};
 }  // namespace Parser
 namespace Lexer {
 /**
@@ -331,7 +348,7 @@ class LongNote : public BasicsWord {
 class environment : public Struct::BasicType {
  public:
   std::string toString() const override {
-    auto a = (std::string) "[Compiler Core][Enviroment]\n" +
+    auto a = (std::string) "[Compiler Core][Environment]\n" +
              (std::string) "-------list------\n";
     for (auto i : wordList) {
       a += "|" + std::to_string(i->id) + "|" + i->type + "|\n";
@@ -351,7 +368,12 @@ class environment : public Struct::BasicType {
   }
 };
 }  // namespace Env
-
+/**
+ * @brief Standard Environment
+ * @class StandardEnv
+ * @note
+ * TODD: more Keywords
+ */
 class StandardEnv : public Env::environment {
  public:
   /*

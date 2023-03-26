@@ -23,7 +23,7 @@ class Lexicon : public Struct::BasicType {
     type = ty;
   }
 };
-class MorphemeStream
+class LexiconStream
     : public std::pair<std::vector<Lexicon>, std::vector<LexerError *> >,
       public Struct::BasicType {
  public:
@@ -56,8 +56,8 @@ class MorphemeStream
 class _Lexer_ {
  public:
   Env::environment *env;
-  MorphemeStream run(std::string str) {
-    MorphemeStream stream;
+  LexiconStream run(std::string str) {
+    LexiconStream stream;
     int Iter = 0;
     Env::BasicC controller;
     controller.back = [&Iter]() -> void { Iter--; };
