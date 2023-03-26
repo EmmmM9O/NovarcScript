@@ -9,15 +9,38 @@
 
 #include "src/struct/BasicType.hpp"
 #include "src/struct/Color.hpp"
+#include "src/struct/Tree.hpp"
 namespace NAS {
 namespace core {
+namespace Parser {
+/**
+ * @brief Node for abstract syntax tree
+ *
+ */
+class ASTNode : public Struct::BasicType {};
+/**
+ * @brief abstract syntax tree
+ * @note for Parser
+ */
+typedef Struct::BasicTree<ASTNode> AST;
+}  // namespace Parser
 namespace Lexer {
+/**
+ * @brief Lexer Error
+ *
+ */
+
 class LexerError : public Struct::BasicType {
  public:
   int code;
+  /**
+   * @brief get the error
+   * @return std::string
+   */
   virtual std::string what() const { return "Empty Error"; }
   std::string toString() const override { return what(); }
 };
+
 }  // namespace Lexer
 namespace Env {
 enum class State {

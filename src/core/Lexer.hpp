@@ -11,25 +11,25 @@ namespace NAS {
 namespace core {
 namespace Lexer {
 
-class Morpheme : public Struct::BasicType {
+class Lexicon : public Struct::BasicType {
  public:
   Env::BasicsWord *type;
   std::string str;
   std::string toString() const override {
     return "<" + type->toString() + ">:" + str;
   }
-  Morpheme(std::string st, Env::BasicsWord *ty) {
+  Lexicon(std::string st, Env::BasicsWord *ty) {
     str = st;
     type = ty;
   }
 };
 class MorphemeStream
-    : public std::pair<std::vector<Morpheme>, std::vector<LexerError *> >,
+    : public std::pair<std::vector<Lexicon>, std::vector<LexerError *> >,
       public Struct::BasicType {
  public:
   void clear() {
     first.clear();
-    std::vector<Morpheme> t;
+    std::vector<Lexicon> t;
     first.swap(t);
     for (auto i : second) {
       delete i;
@@ -71,7 +71,7 @@ class _Lexer_ {
       Iter++;
       for (auto i : env->wordList) {
         controller.addList = [&i, &stream](std::string str) -> void {
-          stream.first.push_back(Morpheme(str, i));
+          stream.first.push_back(Lexicon(str, i));
         };
         if (i->checkLexer(Char, s, state, controller)) {
           continue;
@@ -80,7 +80,7 @@ class _Lexer_ {
     }
     for (auto i : env->wordList) {
       controller.addList = [&i, &stream](std::string str) -> void {
-        stream.first.push_back(Morpheme(str, i));
+        stream.first.push_back(Lexicon(str, i));
       };
       if (i->endLexer(s, state, controller)) {
         continue;

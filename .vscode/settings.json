@@ -1,3 +1,5 @@
 {
+    "cmake.configureOnEdit": false,
+    "cmake.configureOnOpen": true,
     "editor.formatOnSave": true
 }
