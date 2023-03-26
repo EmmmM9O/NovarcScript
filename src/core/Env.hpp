@@ -13,7 +13,16 @@
 namespace NAS {
 namespace core {
 namespace Parser {
-enum class Type { Start, KeyWord };
+enum class Type {
+  TypeKeyWord,
+  Start,
+  KeyWord,
+  Operator,
+  Condition,
+  Addon,
+  Identifier,
+  Const
+};
 /**
  * @brief Node for abstract syntax tree
  *
@@ -34,7 +43,7 @@ class AST : public Struct::BasicTree<ASTNode> {
  public:
   std::string toString() const override final {
     std::string str;
-    root->DeepForEach([&str](Struct::BasicTreeNote<ASTNode> node) -> void {
+    root->DeepForEach([&str](Struct::BasicTreeNode<ASTNode> node) -> void {
       str += "[" + node.father->data.key + "]->[" + node.data.key + "]";
     });
     return str;
@@ -87,8 +96,19 @@ class BasicC {
   boost::function<void(std::string)> addList;
   boost::function<void()> back;
 };
+enum class WordType {
+  Number,
+  Identifier,
+  Note,
+  Operator,
+  Separator,
+  KeyWord,
+  String
+};
+
 class BasicsWord : public Struct::BasicType {
  public:
+  WordType wordType;
   int id;
   std::string type;
   static bool isNumber(char Char) { return '0' <= Char && Char <= '9'; }
@@ -157,17 +177,17 @@ class Letter : public BasicsWord {
     return false;
   }
 };
-/*
- *When a letter finish check it by State::Word
- *need Letter
- * also work for identifier
- *id 100 identifier
+/**
+ * @brief BasicsLetter
+ * @note work for Identifier
+ *
  */
 class BasicsLetter : public BasicsWord {
  public:
   BasicsLetter() {
     type = "identifier";
     id = 100;
+    wordType = WordType::Identifier;
   }
   virtual bool checkWord(std::string &str) { return true; }
   virtual bool checkLexer(char Char, std::string &str, State &state,
@@ -193,6 +213,7 @@ class BasicsKeyWord : public BasicsLetter {
     key = k;
     id = i;
     type = "[KeyWord:" + k + "]";
+    wordType = WordType::KeyWord;
   }
   virtual bool checkWord(std::string &str) override { return str == key; }
 };
@@ -204,6 +225,7 @@ class Number : public BasicsWord {
   Number() {
     type = "Number";
     id = 101;
+    wordType = WordType::Number;
   }
   bool checkLexer(char Char, std::string &str, State &state,
                   BasicC &controller) override final {
@@ -230,6 +252,7 @@ class String : public BasicsWord {
   String() {
     type = "String";
     id = 102;
+    wordType = WordType::String;
   }
   bool checkLexer(char Char, std::string &str, State &state,
                   BasicC &controller) override final {
@@ -262,6 +285,7 @@ class Operator : public BasicsWord {
   Operator() {
     type = "Operator";
     id = 103;
+    wordType = WordType::Operator;
   }
   bool checkLexer(char Char, std::string &str, State &state,
                   BasicC &controller) override final {
@@ -285,6 +309,7 @@ class Note : public BasicsWord {
   Note() {
     type = "Note";
     id = 104;
+    wordType = WordType::Operator;
   }
   bool checkLexer(char Char, std::string &str, State &state,
                   BasicC &controller) override final {
@@ -321,6 +346,7 @@ class LongNote : public BasicsWord {
   LongNote() {
     type = "LongNote";
     id = 104;
+    wordType = WordType::Note;
   }
   bool checkLexer(char Char, std::string &str, State &state,
                   BasicC &controller) override final {
@@ -348,9 +374,185 @@ class LongNote : public BasicsWord {
     return false;
   }
 };
+class Separator : public BasicsWord {
+ public:
+  Separator() {
+    id = 105;
+    wordType = WordType::Separator;
+    type = "Separator";
+  }
+  bool isSeparator(char Char) {
+    switch (Char) {
+      case ';':
+      case ',':
+      case '{':
+      case '}':
+      case '\n':
+        return true;
+      default:
+        return false;
+    }
+  }
+  bool checkLexer(char Char, std::string &str, State &state,
+                  BasicC &controller) override {
+    if (state == State::Start && isSeparator(Char)) {
+      str.push_back(Char);
+      controller.addList(str);
+      str = "";
+      return true;
+    }
+    return false;
+  }
+};
 /*
  *for Compiler to config
  */
+
+}  // namespace Env
+
+namespace Lexer {
+
+class Lexicon : public Struct::BasicType {
+ public:
+  Env::BasicsWord *type;
+  std::string str;
+  std::string toString() const override {
+    return "<" + type->toString() + ">:" + str;
+  }
+  Lexicon(std::string st, Env::BasicsWord *ty) {
+    str = st;
+    type = ty;
+  }
+};
+class LexiconStream
+    : public std::pair<std::vector<Lexicon>, std::vector<LexerError *> >,
+      public Struct::BasicType {
+ public:
+  void clear() {
+    first.clear();
+    std::vector<Lexicon> t;
+    first.swap(t);
+    for (auto i : second) {
+      delete i;
+    }
+    second.clear();
+    std::vector<LexerError *> t2;
+    second.swap(t2);
+  }
+  std::string toString() const override {
+    std::string str;
+    for (auto i : first) {
+      str += "[" + i.toString() + "]\n";
+    }
+    str += Text::red.text("Error : " + std::to_string(second.size()));
+    if (second.size() > 0) {
+      for (auto i : second) {
+        str += Text::red.text("\n[" + i->toString() + "]");
+      }
+    }
+    return str;
+  }
+};
+}  // namespace Lexer
+template <typename T>
+concept AbleD = requires(T t) {
+  t == t;
+};
+namespace Parser {
+class ParserError : public Lexer::LexerError {
+  std::string what() const override { return "[Empty][ParserError]"; }
+};
+class Controller {
+ public:
+  boost::function<void(ParserError *)> Throw;
+};
+enum class RunningState {
+  Start,
+  TypeKeyWord,
+};
+class BasicGrammar : public Struct::BasicType {
+ public:
+  template <AbleD T>
+  static bool include(std::vector<T> list, T key) {
+    for (auto i : list) {
+      if (key == i) return true;
+    }
+    return false;
+  }
+  virtual bool check(Lexer::Lexicon &lexicon, AST &tree, RunningState state,
+                     Struct::BasicTreeNode<ASTNode> *node,
+                     Controller *controller) {
+    return false;
+  }
+};
+class TypeGrammarErr : public ParserError {
+ public:
+  std::string what() const override { return "[Grammar Error]def twice"; }
+};
+class TypeEmptyError : public ParserError {
+ public:
+  std::string what() const override { return "[Error]a empty Type define"; }
+};
+class TypeKeyWord : public BasicGrammar {
+ public:
+  std::vector<std::string> Keys;
+  bool check(Lexer::Lexicon &lexicon, AST &tree, RunningState state,
+             Struct::BasicTreeNode<ASTNode> *node,
+             Controller *controller) override {
+    if (state == RunningState::Start && include(Keys, lexicon.str)) {
+      state = RunningState::TypeKeyWord;
+      auto newNode = node->add(new Struct::BasicTreeNode<ASTNode>);
+      newNode->data.type = Type::TypeKeyWord;
+      newNode->data.key = lexicon.str;
+      node = newNode;
+      return true;
+    }
+    if (state == RunningState::TypeKeyWord) {
+      if (lexicon.type->wordType == Env::WordType::Identifier) {
+        if (node->children.size() == 0) {
+          auto newNode = node->add(new Struct::BasicTreeNode<ASTNode>);
+          newNode->data.type = Type::Identifier;
+          newNode->data.key = lexicon.str;
+        } else {
+          controller->Throw(new TypeGrammarErr);
+          state = RunningState::Start;
+          node = node->father;
+        }
+      } else if (lexicon.type->wordType == Env::WordType::Separator) {
+        if (node->children.size() == 0) {
+          controller->Throw(new TypeEmptyError);
+          state = RunningState::Start;
+          node = node->father;
+        } else {
+          state = RunningState::Start;
+          node = node->father;
+        }
+      } else if (lexicon.str == "=") {
+        if (node->children.size() == 1) {
+          auto newNode = node->add(new Struct::BasicTreeNode<ASTNode>);
+          newNode->data.type = Type::Operator;
+          newNode->data.key = "=";
+        }
+      } else if (lexicon.type->wordType == Env::WordType::Number ||
+                 lexicon.type->wordType == Env::WordType::String) {
+        if (node->children.size() == 2) {
+          auto newNode =
+              node->children[1]->add(new Struct::BasicTreeNode<ASTNode>);
+          newNode->data.type = Type::Const;
+          newNode->data.key = lexicon.str;
+        }
+      } else {
+        state = RunningState::Start;
+        node = node->father;
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
+};
+}  // namespace Parser
+namespace Env {
 class environment : public Struct::BasicType {
  public:
   std::string toString() const override {
@@ -401,58 +603,5 @@ class StandardEnv : public Env::environment {
                 new Env::LongNote};
   }
 };
-namespace Lexer {
-
-class Lexicon : public Struct::BasicType {
- public:
-  Env::BasicsWord *type;
-  std::string str;
-  std::string toString() const override {
-    return "<" + type->toString() + ">:" + str;
-  }
-  Lexicon(std::string st, Env::BasicsWord *ty) {
-    str = st;
-    type = ty;
-  }
-};
-class LexiconStream
-    : public std::pair<std::vector<Lexicon>, std::vector<LexerError *> >,
-      public Struct::BasicType {
- public:
-  void clear() {
-    first.clear();
-    std::vector<Lexicon> t;
-    first.swap(t);
-    for (auto i : second) {
-      delete i;
-    }
-    second.clear();
-    std::vector<LexerError *> t2;
-    second.swap(t2);
-  }
-  std::string toString() const override {
-    std::string str;
-    for (auto i : first) {
-      str += "[" + i.toString() + "]\n";
-    }
-    str += Text::red.text("Error : " + std::to_string(second.size()));
-    if (second.size() > 0) {
-      for (auto i : second) {
-        str += Text::red.text("\n[" + i->toString() + "]");
-      }
-    }
-    return str;
-  }
-};
-}  // namespace Lexer
-namespace Parser {
-enum class RunningState { Start };
-class BasicGrammar : public Struct::BasicType {
- public:
-  virtual bool check(Lexer::Lexicon &lexicon, AST &tree, RunningState state) {
-    return false;
-  }
-};
-}  // namespace Parser
 }  // namespace core
 }  // namespace NAS

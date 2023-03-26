@@ -25,6 +25,7 @@ class _parser_ : public Struct::BasicType {
     RunningState state = RunningState::Start;
     tree.root->data.type = Type::Start;
     tree.root->data.key = StandardKey::Start;
+    auto nowNode = tree.root;
     return tree;
   }
 };

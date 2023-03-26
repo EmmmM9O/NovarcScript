@@ -7,47 +7,50 @@
 namespace NAS {
 namespace Struct {
 template <typename Data>
-class BasicTreeNote : public BasicType {
+class BasicTreeNode : public BasicType {
  public:
   Data data;
-  BasicTreeNote<Data> *father;
-  std::vector<BasicTreeNote<Data> *> children;
-  ~BasicTreeNote() {
+  BasicTreeNode<Data> *father;
+  std::vector<BasicTreeNode<Data> *> children;
+  ~BasicTreeNode() {
     for (auto &i : children) {
       delete i;
     }
     children.clear();
-    std::vector<BasicTreeNote<Data> *> t;
+    std::vector<BasicTreeNode<Data> *> t;
     children.swap(t);
   }
-  void forEach(boost::function<void(BasicTreeNote<Data> *)> func) {
+  void forEach(boost::function<void(BasicTreeNode<Data> *)> func) {
     for (auto &i : children) {
       func(i);
     }
   }
-  void DeepForEach(boost::function<void(BasicTreeNote<Data> *)> func) {
+  void DeepForEach(boost::function<void(BasicTreeNode<Data> *)> func) {
     for (auto &i : children) {
       func(i);
       i->DeepForEach(func);
     }
   }
-  void add(BasicTreeNote<Data> *child) { children.push_back(child); }
+  BasicTreeNode<Data> *add(BasicTreeNode<Data> *child) {
+    children.push_back(child);
+    return children[children.size() - 1];
+  }
 };
 template <typename Data>
 class BasicTree : public BasicType {
  public:
   virtual std::string toString() const override { return "[Tree][Object]"; }
-  BasicTreeNote<Data> *root;
+  BasicTreeNode<Data> *root;
   BasicTree() {
-    root = new BasicTreeNote<Data>;
+    root = new BasicTreeNode<Data>;
     root->father = nullptr;
   }
   ~BasicTree() { delete root; }
-  void DeepForEach(boost::function<void(BasicTreeNote<Data> *)> func) {
+  void DeepForEach(boost::function<void(BasicTreeNode<Data> *)> func) {
     root->DeepForEach(func);
   }
   void clear() { delete root; }
-  void insert(BasicTreeNote<Data> *fa, BasicTree<Data> &tree) {
+  void insert(BasicTreeNode<Data> *fa, BasicTree<Data> &tree) {
     tree.root->father = fa;
   }
 };
